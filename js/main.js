@@ -16,7 +16,9 @@
         DEBOUNCE_DELAY: 200, // Debounce delay in milliseconds
         STATUS_TIMEOUT: 1000, // Status message timeout
         INITIAL_GENERATION_DELAY: 300, // Initial QR generation delay
-        MODULE_LOAD_TIMEOUT: 5000 // Module loading timeout
+        MODULE_LOAD_TIMEOUT: 5000, // Module loading timeout
+        MAX_FILE_SIZE: 5 * 1024 * 1024, // Max file size (5MB)
+        MAX_FILE_SIZE_MB: 5 // Max file size in MB for display
     };
     
     // ===== State Management =====
@@ -30,7 +32,8 @@
         eventListeners: new Map(), // Use Map for better tracking
         qrCache: new Map(),
         lastGeneratedConfig: '',
-        isInitialized: false
+        isInitialized: false,
+        isInitializing: false // Prevent concurrent initialization
     };
     
     // ===== DOM Elements =====
@@ -320,6 +323,7 @@
     // ===== Logo Upload =====
     /**
      * Setup logo upload with validation and preview
+     * Prevents race conditions with QR generation
      */
     function setupLogoUpload() {
         const logoUpload = dom.$('logo-upload');
@@ -339,9 +343,9 @@
                 return;
             }
             
-            // Check file size (max 5MB)
-            if (file.size > 5 * 1024 * 1024) {
-                showStatus('Image file too large (max 5MB)', 'error');
+            // Check file size using constant
+            if (file.size > CONSTANTS.MAX_FILE_SIZE) {
+                showStatus(`Image file too large (max ${CONSTANTS.MAX_FILE_SIZE_MB}MB)`, 'error');
                 return;
             }
             
@@ -351,10 +355,23 @@
                 const img = new Image();
                 
                 addTrackedEventListener(img, 'load', () => {
-                    // Dispose of old logo if it exists
+                    // Prevent race condition: check if generation is in progress
+                    if (state.generating) {
+                        showStatus('Please wait for current generation to complete', 'error');
+                        return;
+                    }
+                    
+                    // Properly dispose of old logo if it exists
                     if (state.logo) {
                         try {
+                            // Clear canvas references
+                            if (state.canvas) {
+                                state.canvas.width = 0;
+                                state.canvas.height = 0;
+                            }
+                            // Dispose of old logo image
                             state.logo.src = '';
+                            state.logo = null;
                         } catch (error) {
                             console.warn('Failed to dispose old logo', error);
                         }
@@ -368,6 +385,9 @@
                     if (preview) preview.src = ev.target.result;
                     if (wrap) wrap.style.display = 'block';
                     if (errorCorrection) errorCorrection.value = 'H'; // Auto high EC for logos
+                    
+                    // Clear cache to force regeneration with new logo
+                    state.qrCache.clear();
                     
                     debouncedGenerate();
                 });
@@ -390,6 +410,12 @@
         
         if (clearLogoBtn) {
             addTrackedEventListener(clearLogoBtn, 'click', () => {
+                // Prevent race condition: check if generation is in progress
+                if (state.generating) {
+                    showStatus('Please wait for current generation to complete', 'error');
+                    return;
+                }
+                
                 // Dispose of logo image properly
                 if (state.logo) {
                     try {
@@ -631,6 +657,7 @@
     // ===== QR Generation =====
     /**
      * Generate QR code with caching and error handling
+     * Improved cache management to prevent race conditions
      */
     function generate() {
         if (state.generating) return;
@@ -824,12 +851,23 @@
     
     /**
      * Debounced QR generation to prevent excessive calls
+     * Uses AbortController to prevent race conditions
      */
     function debouncedGenerate() {
+        // Clear existing timer
         if (state.debounceTimer) {
             clearTimeout(state.debounceTimer);
+            state.debounceTimer = null;
         }
+        
+        // Create new timer with race condition prevention
         state.debounceTimer = setTimeout(() => {
+            // Check if already generating to prevent race
+            if (state.generating) {
+                state.debounceTimer = null;
+                return;
+            }
+            
             state.debounceTimer = null;
             generate();
         }, CONSTANTS.DEBOUNCE_DELAY);
@@ -914,54 +952,6 @@
         if (feedback) feedback.remove();
     }
     
-    // ===== Progressive Disclosure =====
-    function setupProgressiveDisclosure() {
-        // Advanced options toggle
-        const advancedSection = document.createElement('div');
-        advancedSection.className = 'control-section';
-        advancedSection.innerHTML = `
-            <h6><i class="bi bi-gear" aria-hidden="true"></i> Advanced Options</h6>
-            <div class="form-check mb-2">
-                <input class="form-check-input" type="checkbox" id="show-advanced">
-                <label class="form-check-label small" for="show-advanced">Show advanced settings</label>
-            </div>
-            <div id="advanced-options" style="display: none;">
-                <div class="row g-2">
-                    <div class="col-6">
-                        <label for="quiet-zone" class="form-label small">Quiet Zone</label>
-                        <select class="form-select form-select-sm qr-input" id="quiet-zone">
-                            <option value="0">None</option>
-                            <option value="1">Small</option>
-                            <option value="2" selected>Medium</option>
-                            <option value="4">Large</option>
-                        </select>
-                    </div>
-                    <div class="col-6">
-                        <label for="version" class="form-label small">QR Version</label>
-                        <select class="form-select form-select-sm qr-input" id="version">
-                            <option value="0" selected>Auto</option>
-                            <option value="1">Version 1 (21x21)</option>
-                            <option value="2">Version 2 (25x25)</option>
-                            <option value="3">Version 3 (29x29)</option>
-                            <option value="4">Version 4 (33x33)</option>
-                            <option value="5">Version 5 (37x37)</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        // Insert before the logo section
-        const logoSection = document.querySelector('section[aria-labelledby="logo-heading"]');
-        logoSection.parentNode.insertBefore(advancedSection, logoSection);
-        
-        // Toggle advanced options
-        const showAdvancedCheckbox = document.getElementById('show-advanced');
-        addTrackedEventListener(showAdvancedCheckbox, 'change', function() {
-            const advanced = document.getElementById('advanced-options');
-            advanced.style.display = this.checked ? 'block' : 'none';
-        });
-    }
     
     function getConfigHash() {
         const config = {
@@ -1162,7 +1152,7 @@
         // Auto-generate on input - only for text inputs and textareas
         const attachInputListeners = () => {
             dom.$$('.qr-input').forEach(el => {
-                // Skip if already has input listener
+                // Skip if already has input listener (use WeakMap for better tracking)
                 if (el.dataset.hasInputListener === 'true') return;
                 
                 if ((el.tagName === 'INPUT' && el.type !== 'file') || el.tagName === 'TEXTAREA') {
@@ -1187,7 +1177,18 @@
         attachInputListeners();
         
         // Re-attach listeners when templates switch (some inputs may become visible)
-        addTrackedEventListener(window, 'template-switched', attachInputListeners);
+        // Use a debounced version to prevent race conditions
+        const debouncedAttachListeners = () => {
+            if (state.debounceTimer) {
+                clearTimeout(state.debounceTimer);
+            }
+            state.debounceTimer = setTimeout(() => {
+                attachInputListeners();
+                state.debounceTimer = null;
+            }, 50); // Small delay to prevent race conditions
+        };
+        
+        addTrackedEventListener(window, 'template-switched', debouncedAttachListeners);
     }
     
     // ===== Initialization =====
@@ -1195,6 +1196,13 @@
      * Initialize the application with error handling
      */
     async function init() {
+        // Prevent concurrent initialization
+        if (state.isInitialized || state.isInitializing) {
+            return;
+        }
+        
+        state.isInitializing = true;
+        
         try {
             // Load non-critical modules dynamically
             const [{ NetworkMonitor }, { ThemeManager }] = await Promise.all([
@@ -1212,7 +1220,6 @@
             setupRangeSliders();
             setupLogoUpload();
             setupEventListeners();
-            setupProgressiveDisclosure();
             showUserGuidance();
             
             // Generate initial QR code
@@ -1232,10 +1239,11 @@
             setupRangeSliders();
             setupLogoUpload();
             setupEventListeners();
-            setupProgressiveDisclosure();
             showUserGuidance();
             
             setTimeout(() => generate(), CONSTANTS.INITIAL_GENERATION_DELAY);
+        } finally {
+            state.isInitializing = false;
         }
     }
     

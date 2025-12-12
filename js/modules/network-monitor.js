@@ -48,6 +48,7 @@ export class NetworkMonitor {
         this.outboundCount = 0;
         this.eventListeners = []; // Track event listeners for cleanup
         this.observers = []; // Track observers for cleanup
+        this.originalPrototypes = {}; // Store original prototypes for restoration
         
         // Validate required elements
         if (!this.log || !this.outboundStatus || !this.requestCount) {
@@ -102,8 +103,47 @@ export class NetworkMonitor {
                 }
             });
             this.observers = [];
+            
+            // Restore original prototypes
+            this.restorePrototypes();
         } catch (error) {
             console.error('NetworkMonitor cleanup error:', error);
+        }
+    }
+    
+    /**
+     * Store original prototype before modification
+     * @param {string} name - Name of the prototype
+     * @param {Function} original - Original function
+     */
+    storeOriginalPrototype(name, original) {
+        if (!this.originalPrototypes[name]) {
+            this.originalPrototypes[name] = original;
+        }
+    }
+    
+    /**
+     * Restore all modified prototypes to their original state
+     */
+    restorePrototypes() {
+        try {
+            if (this.originalPrototypes.fetch && window.fetch !== this.originalPrototypes.fetch) {
+                window.fetch = this.originalPrototypes.fetch;
+            }
+            if (this.originalPrototypes.XMLHttpRequestOpen && XMLHttpRequest.prototype.open !== this.originalPrototypes.XMLHttpRequestOpen) {
+                XMLHttpRequest.prototype.open = this.originalPrototypes.XMLHttpRequestOpen;
+            }
+            if (this.originalPrototypes.XMLHttpRequestSend && XMLHttpRequest.prototype.send !== this.originalPrototypes.XMLHttpRequestSend) {
+                XMLHttpRequest.prototype.send = this.originalPrototypes.XMLHttpRequestSend;
+            }
+            if (this.originalPrototypes.sendBeacon && navigator.sendBeacon !== this.originalPrototypes.sendBeacon) {
+                navigator.sendBeacon = this.originalPrototypes.sendBeacon;
+            }
+            if (this.originalPrototypes.WebSocket && window.WebSocket !== this.originalPrototypes.WebSocket) {
+                window.WebSocket = this.originalPrototypes.WebSocket;
+            }
+        } catch (error) {
+            console.error('Failed to restore prototypes:', error);
         }
     }
     
@@ -335,6 +375,8 @@ export class NetworkMonitor {
     interceptFetch() {
         // Intercept fetch() API - This catches ALL fetch calls including POST/PUT/DELETE
         const originalFetch = window.fetch;
+        this.storeOriginalPrototype('fetch', originalFetch);
+        
         window.fetch = (...args) => {
             const url = typeof args[0] === 'string' ? args[0] : (args[0]?.url || args[0]);
             const options = args[1] || {};
@@ -358,6 +400,9 @@ export class NetworkMonitor {
         const originalXHROpen = XMLHttpRequest.prototype.open;
         const originalXHRSend = XMLHttpRequest.prototype.send;
         const self = this; // Store reference to NetworkMonitor instance
+        
+        this.storeOriginalPrototype('XMLHttpRequestOpen', originalXHROpen);
+        this.storeOriginalPrototype('XMLHttpRequestSend', originalXHRSend);
         
         XMLHttpRequest.prototype.open = function(method, url, ...rest) {
             this._method = method.toUpperCase();
@@ -386,6 +431,8 @@ export class NetworkMonitor {
         // Intercept sendBeacon - Often used for analytics
         if (navigator.sendBeacon) {
             const originalBeacon = navigator.sendBeacon.bind(navigator);
+            this.storeOriginalPrototype('sendBeacon', originalBeacon);
+            
             navigator.sendBeacon = (url, data) => {
                 this.addEntry(NetworkMonitor.HTTP_METHODS.BEACON, NetworkMonitor.RESOURCE_TYPES.BEACON, url, NetworkMonitor.STATUS.PENDING);
                 this.markOutbound(NetworkMonitor.HTTP_METHODS.BEACON, url);
@@ -400,6 +447,8 @@ export class NetworkMonitor {
     interceptWebSocket() {
         // Intercept WebSocket connections
         const OriginalWebSocket = window.WebSocket;
+        this.storeOriginalPrototype('WebSocket', OriginalWebSocket);
+        
         window.WebSocket = (url, protocols) => {
             this.addEntry(NetworkMonitor.HTTP_METHODS.WEBSOCKET, NetworkMonitor.RESOURCE_TYPES.WEBSOCKET, url, NetworkMonitor.STATUS.WEBSOCKET);
             // WebSockets are bidirectional, so flag them

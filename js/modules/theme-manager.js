@@ -21,6 +21,9 @@ export class ThemeManager {
         this.themeIconLight = document.getElementById('theme-icon-light');
         this.themeIconDark = document.getElementById('theme-icon-dark');
         this.htmlElement = document.documentElement;
+        this.eventListeners = []; // Track event listeners for cleanup
+        this.mediaQueryListeners = []; // Track media query listeners for cleanup
+        this.isToggling = false; // Prevent race conditions
         
         // Validate required elements
         if (!this.themeToggle || !this.themeIconLight || !this.themeIconDark) {
@@ -47,24 +50,36 @@ export class ThemeManager {
             // Listen for system theme changes (only if user hasn't set a preference)
             if (window.matchMedia) {
                 const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-                mediaQuery.addEventListener('change', (e) => {
+                const changeHandler = (e) => {
                     // Only auto-switch if user hasn't set a manual preference
                     if (!localStorage.getItem(ThemeManager.STORAGE_KEY)) {
                         this.applyTheme(e.matches ? ThemeManager.THEMES.DARK : ThemeManager.THEMES.LIGHT);
                     }
-                });
+                };
+                mediaQuery.addEventListener('change', changeHandler);
+                this.mediaQueryListeners.push({ mediaQuery, handler: changeHandler });
             }
             
             // Theme toggle click handler
             const clickHandler = () => {
+                // Prevent race condition: check if already toggling
+                if (this.isToggling) return;
+                
+                this.isToggling = true;
                 const currentTheme = this.htmlElement.getAttribute('data-theme') || ThemeManager.THEMES.LIGHT;
                 const newTheme = currentTheme === ThemeManager.THEMES.LIGHT ? ThemeManager.THEMES.DARK : ThemeManager.THEMES.LIGHT;
                 
                 this.applyTheme(newTheme);
                 // Save user preference
                 localStorage.setItem(ThemeManager.STORAGE_KEY, newTheme);
+                
+                // Reset toggling flag after a short delay
+                setTimeout(() => {
+                    this.isToggling = false;
+                }, 100);
             };
             this.themeToggle.addEventListener('click', clickHandler);
+            this.eventListeners.push({ element: this.themeToggle, event: 'click', handler: clickHandler });
             
             // Keyboard support for theme toggle
             const keydownHandler = (e) => {
@@ -74,8 +89,42 @@ export class ThemeManager {
                 }
             };
             this.themeToggle.addEventListener('keydown', keydownHandler);
+            this.eventListeners.push({ element: this.themeToggle, event: 'keydown', handler: keydownHandler });
         } catch (error) {
             console.error('ThemeManager initialization error:', error);
+        }
+    }
+    
+    /**
+     * Cleanup resources to prevent memory leaks
+     */
+    cleanup() {
+        try {
+            // Remove all event listeners
+            this.eventListeners.forEach(({ element, event, handler }) => {
+                try {
+                    if (element && element.removeEventListener) {
+                        element.removeEventListener(event, handler);
+                    }
+                } catch (error) {
+                    console.warn(`Failed to remove event listener: ${event}`, error);
+                }
+            });
+            this.eventListeners = [];
+            
+            // Remove all media query listeners
+            this.mediaQueryListeners.forEach(({ mediaQuery, handler }) => {
+                try {
+                    if (mediaQuery && mediaQuery.removeEventListener) {
+                        mediaQuery.removeEventListener('change', handler);
+                    }
+                } catch (error) {
+                    console.warn('Failed to remove media query listener', error);
+                }
+            });
+            this.mediaQueryListeners = [];
+        } catch (error) {
+            console.error('ThemeManager cleanup error:', error);
         }
     }
 

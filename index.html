@@ -60,9 +60,9 @@
                         <i class="bi bi-moon-fill" id="theme-icon-dark" aria-hidden="true" style="display: none;"></i>
                     </button>
                 </div>
-                <div style="text-align: center;">
+                <div class="header-content" style="text-align: center;">
                     <h1><i class="bi bi-qr-code" aria-hidden="true"></i> Privacy-First QR Code Generator</h1>
-                    <p class="mb-0">Open Source, No Tracking <span class="badge-auto">CLIENT-SIDE</span> <span class="badge-auto" style="background: #5dade2;">PRIVACY-FIRST</span></p>
+                    <p class="mb-0">Open Source, No Tracking <span class="badge-auto">CLIENT-SIDE</span> <span class="badge-auto badge-privacy" style="background: #5dade2;">PRIVACY-FIRST</span></p>
                 </div>
             </header>
             
@@ -366,7 +366,7 @@
                                 <input type="file" class="form-control form-control-sm" id="logo-upload" accept="image/*" aria-describedby="logo-upload-help">
                                 <div id="logo-upload-help" class="form-text">Upload an image to embed in the QR code</div>
                             </div>
-                            <div class="col-auto" id="logo-preview-wrap" style="display:none;">
+                            <div class="col-auto" id="logo-preview-wrap" class="logo-preview-wrap" style="display:none;">
                                 <img id="logo-preview" class="logo-preview" alt="Uploaded logo preview">
                                 <button class="btn btn-sm btn-outline-danger ms-1" id="clear-logo" aria-label="Remove uploaded logo"><i class="bi bi-x" aria-hidden="true"></i></button>
                             </div>
@@ -394,12 +394,12 @@
                     </div>
                     
                     <!-- Downloads -->
-                    <div class="mt-3" id="download-section" style="display:none;" role="region" aria-labelledby="download-heading">
+                    <div class="mt-3" id="download-section" class="download-section" style="display:none;" role="region" aria-labelledby="download-heading">
                         <h6 id="download-heading"><i class="bi bi-download" aria-hidden="true"></i> Download</h6>
                         <div class="row g-2">
-                            <div class="col"><button class="btn btn-outline-primary w-100" style="height: 60px;" id="dl-png" aria-label="Download QR code as PNG image"><i class="bi bi-file-image" aria-hidden="true"></i> PNG</button></div>
-                            <div class="col"><button class="btn btn-outline-primary w-100" style="height: 60px;" id="dl-jpg" aria-label="Download QR code as JPEG image"><i class="bi bi-file-image" aria-hidden="true"></i> JPEG</button></div>
-                            <div class="col"><button class="btn btn-outline-primary w-100" style="height: 60px;" id="dl-svg" aria-label="Download QR code as SVG vector"><i class="bi bi-file-code" aria-hidden="true"></i> SVG</button></div>
+                            <div class="col"><button class="btn btn-outline-primary w-100 download-btn" id="dl-png" aria-label="Download QR code as PNG image"><i class="bi bi-file-image" aria-hidden="true"></i> PNG</button></div>
+                            <div class="col"><button class="btn btn-outline-primary w-100 download-btn" id="dl-jpg" aria-label="Download QR code as JPEG image"><i class="bi bi-file-image" aria-hidden="true"></i> JPEG</button></div>
+                            <div class="col"><button class="btn btn-outline-primary w-100 download-btn" id="dl-svg" aria-label="Download QR code as SVG vector"><i class="bi bi-file-code" aria-hidden="true"></i> SVG</button></div>
                         </div>
                     </div>
                     
@@ -424,29 +424,29 @@
                     </div>
                     
                     <!-- Info -->
-                    <div class="mt-3 p-2 small" style="background: var(--privacy-bg); border-left: 3px solid var(--privacy-border); border-radius: 6px;" role="complementary" aria-labelledby="privacy-heading">
-                        <strong id="privacy-heading" class="text-primary" style="color: var(--privacy-text) !important;"><i class="bi bi-shield-check" aria-hidden="true"></i> Privacy Guaranteed</strong><br>
-                        <span style="color: var(--privacy-muted);">All QR codes generated 100% in your browser. Only CDN resources for libraries are loaded - no data ever leaves your device.</span>
+                    <div class="mt-3 p-2 small privacy-info" style="background: var(--privacy-bg); border-left: 3px solid var(--privacy-border); border-radius: 6px;" role="complementary" aria-labelledby="privacy-heading">
+                        <strong id="privacy-heading" class="text-primary privacy-heading" style="color: var(--privacy-text) !important;"><i class="bi bi-shield-check" aria-hidden="true"></i> Privacy Guaranteed</strong><br>
+                        <span class="privacy-text" style="color: var(--privacy-muted);">All QR codes generated 100% in your browser. Only CDN resources for libraries are loaded - no data ever leaves your device.</span>
                     </div>
                 </section>
             </main>
         </div>
         
         <!-- Footer -->
-        <footer class="text-center mt-4 pb-3" role="contentinfo">
+        <footer class="text-center mt-4 pb-3 footer" role="contentinfo">
             <div class="mb-2">
-                <small class="fw-bold" style="color: var(--footer-text);">
+                <small class="fw-bold footer-text" style="color: var(--footer-text);">
                     <i class="bi bi-heart-fill text-danger" aria-hidden="true"></i> Created out of frustration with commercial QR tools that limit features and harvest your data.
                 </small>
             </div>
-            <small style="color: var(--footer-text);">Built by <a href="https://github.com/paramedicspecialist" target="_blank" rel="noopener noreferrer" class="footer-link">Darkhorse</a> with <a href="https://getbootstrap.com/" target="_blank" rel="noopener noreferrer" class="footer-link">Bootstrap 5</a> & <a href="https://github.com/kazuhikoarase/qrcode-generator" target="_blank" rel="noopener noreferrer" class="footer-link">qrcode-generator</a> & <a href="https://github.com/cure53/DOMPurify" target="_blank" rel="noopener noreferrer" class="footer-link">DOMPurify</a></small>
+            <small class="footer-text" style="color: var(--footer-text);">Built by <a href="https://github.com/paramedicspecialist" target="_blank" rel="noopener noreferrer" class="footer-link">Darkhorse</a> with <a href="https://getbootstrap.com/" target="_blank" rel="noopener noreferrer" class="footer-link">Bootstrap 5</a> & <a href="https://github.com/kazuhikoarase/qrcode-generator" target="_blank" rel="noopener noreferrer" class="footer-link">qrcode-generator</a> & <a href="https://github.com/cure53/DOMPurify" target="_blank" rel="noopener noreferrer" class="footer-link">DOMPurify</a></small>
             <div class="mt-1">
-                <small style="color: var(--footer-text);">
+                <small class="footer-text" style="color: var(--footer-text);">
                     <i class="bi bi-shield-lock" aria-hidden="true"></i> Privacy Policies:
                     <a href="privacy-policy.html" class="footer-link">Our Privacy Policy</a>
-                    <span style="color: var(--footer-text);">•</span>
+                    <span class="footer-separator" style="color: var(--footer-text);">•</span>
                     <a href="https://bunny.net/privacy/" target="_blank" rel="noopener noreferrer" class="footer-link">Bunny.net (hop.js)</a>
-                    <span style="color: var(--footer-text);">•</span>
+                    <span class="footer-separator" style="color: var(--footer-text);">•</span>
                     <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener noreferrer" class="footer-link">GitHub Pages</a>
                 </small>
             </div>
