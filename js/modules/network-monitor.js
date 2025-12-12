@@ -269,9 +269,11 @@ export class NetworkMonitor {
             entry.appendChild(statusSpan);
             
             // Add clickable URL functionality
-            this.addEventListener(urlSpan, 'click', () => {
+            const clickHandler = () => {
                 window.open(url, '_blank');
-            });
+            };
+            urlSpan.addEventListener('click', clickHandler);
+            this.eventListeners.push({ element: urlSpan, event: 'click', handler: clickHandler });
             
             // Insert at the beginning to show most recent at top
             this.log.insertBefore(entry, this.log.firstChild);
@@ -355,6 +357,7 @@ export class NetworkMonitor {
         // Intercept XMLHttpRequest - Catches AJAX calls
         const originalXHROpen = XMLHttpRequest.prototype.open;
         const originalXHRSend = XMLHttpRequest.prototype.send;
+        const self = this; // Store reference to NetworkMonitor instance
         
         XMLHttpRequest.prototype.open = function(method, url, ...rest) {
             this._method = method.toUpperCase();
@@ -362,14 +365,14 @@ export class NetworkMonitor {
             return originalXHROpen.apply(this, [method, url, ...rest]);
         };
         
-        XMLHttpRequest.prototype.send = (body) => {
+        XMLHttpRequest.prototype.send = function(body) {
             const method = this._method || NetworkMonitor.HTTP_METHODS.GET;
             const url = this._url || 'unknown';
             
-            this.addEntry(method, NetworkMonitor.RESOURCE_TYPES.XHR, url, method === NetworkMonitor.HTTP_METHODS.GET ? NetworkMonitor.STATUS.OK : NetworkMonitor.STATUS.PENDING);
+            self.addEntry(method, NetworkMonitor.RESOURCE_TYPES.XHR, url, method === NetworkMonitor.HTTP_METHODS.GET ? NetworkMonitor.STATUS.OK : NetworkMonitor.STATUS.PENDING);
             
             if (method !== NetworkMonitor.HTTP_METHODS.GET && method !== NetworkMonitor.HTTP_METHODS.HEAD && method !== NetworkMonitor.HTTP_METHODS.OPTIONS) {
-                this.markOutbound(method, url);
+                self.markOutbound(method, url);
             }
             
             return originalXHRSend.apply(this, arguments);

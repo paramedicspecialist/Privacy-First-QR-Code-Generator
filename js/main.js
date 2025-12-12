@@ -111,6 +111,8 @@
                 state.networkMonitor.cleanup();
             }
             
+            // Clear any remaining references
+            state.lastGeneratedConfig = '';
             state.isInitialized = false;
             
         } catch (error) {
@@ -349,6 +351,15 @@
                 const img = new Image();
                 
                 addTrackedEventListener(img, 'load', () => {
+                    // Dispose of old logo if it exists
+                    if (state.logo) {
+                        try {
+                            state.logo.src = '';
+                        } catch (error) {
+                            console.warn('Failed to dispose old logo', error);
+                        }
+                    }
+                    
                     state.logo = img;
                     const preview = dom.$('logo-preview');
                     const wrap = dom.$('logo-preview-wrap');
@@ -365,11 +376,29 @@
             });
             
             reader.readAsDataURL(file);
+            
+            // Dispose of reader after use
+            addTrackedEventListener(reader, 'loadend', () => {
+                try {
+                    reader.removeEventListener('load', null);
+                    reader.removeEventListener('loadend', null);
+                } catch (error) {
+                    console.warn('Failed to dispose FileReader', error);
+                }
+            });
         });
         
         if (clearLogoBtn) {
             addTrackedEventListener(clearLogoBtn, 'click', () => {
-                state.logo = null;
+                // Dispose of logo image properly
+                if (state.logo) {
+                    try {
+                        state.logo.src = '';
+                        state.logo = null;
+                    } catch (error) {
+                        console.warn('Failed to dispose logo image', error);
+                    }
+                }
                 logoUpload.value = '';
                 const wrap = dom.$('logo-preview-wrap');
                 if (wrap) wrap.style.display = 'none';
@@ -608,12 +637,18 @@
         
         const configHash = getConfigHash();
         
-        // Check cache first
+        // Check cache first - but verify the cached canvas is still valid
         if (state.qrCache.has(configHash)) {
             const cached = state.qrCache.get(configHash);
-            displayQRCode(cached);
-            showStatus('<i class="bi bi-check-circle-fill"></i> Ready (cached)', 'success', CONSTANTS.STATUS_TIMEOUT);
-            return;
+            // Check if canvas is still valid (not disposed) and attached to DOM
+            if (cached && cached.width > 0 && cached.height > 0 && cached.getContext) {
+                displayQRCode(cached);
+                showStatus('<i class="bi bi-check-circle-fill"></i> Ready (cached)', 'success', CONSTANTS.STATUS_TIMEOUT);
+                return;
+            } else {
+                // Cached canvas was disposed, remove from cache and regenerate
+                state.qrCache.delete(configHash);
+            }
         }
         
         state.generating = true;
@@ -702,7 +737,9 @@
             if (state.qrCache.size > CONSTANTS.MAX_CACHE_SIZE) {
                 const firstKey = state.qrCache.keys().next().value;
                 const oldCanvas = state.qrCache.get(firstKey);
-                if (oldCanvas) {
+                
+                // Don't dispose if it's the currently displayed canvas
+                if (oldCanvas && oldCanvas !== state.canvas) {
                     oldCanvas.width = 0;
                     oldCanvas.height = 0;
                 }
@@ -738,9 +775,12 @@
         }
         
         // Clear previous QR code properly to prevent memory leaks
+        // But don't dispose if it's the same canvas (cached)
+        const isSameCanvas = state.canvas === qrCanvas;
+        
         while (qrcodeDiv.firstChild) {
             const child = qrcodeDiv.firstChild;
-            if (child.tagName === 'CANVAS') {
+            if (child.tagName === 'CANVAS' && !isSameCanvas) {
                 child.width = 0;
                 child.height = 0;
             }
@@ -916,7 +956,8 @@
         logoSection.parentNode.insertBefore(advancedSection, logoSection);
         
         // Toggle advanced options
-        document.getElementById('show-advanced').addEventListener('change', function() {
+        const showAdvancedCheckbox = document.getElementById('show-advanced');
+        addTrackedEventListener(showAdvancedCheckbox, 'change', function() {
             const advanced = document.getElementById('advanced-options');
             advanced.style.display = this.checked ? 'block' : 'none';
         });
@@ -1146,7 +1187,7 @@
         attachInputListeners();
         
         // Re-attach listeners when templates switch (some inputs may become visible)
-        window.addEventListener('template-switched', attachInputListeners);
+        addTrackedEventListener(window, 'template-switched', attachInputListeners);
     }
     
     // ===== Initialization =====
@@ -1200,12 +1241,12 @@
     
     // Start the application
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
+        addTrackedEventListener(document, 'DOMContentLoaded', init);
     } else {
         init();
     }
     
     // Cleanup on page unload to prevent memory leaks
-    window.addEventListener('beforeunload', cleanup);
+    addTrackedEventListener(window, 'beforeunload', cleanup);
     
 })();

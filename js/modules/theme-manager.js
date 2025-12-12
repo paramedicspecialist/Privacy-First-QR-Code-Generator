@@ -56,22 +56,24 @@ export class ThemeManager {
             }
             
             // Theme toggle click handler
-            this.themeToggle.addEventListener('click', () => {
+            const clickHandler = () => {
                 const currentTheme = this.htmlElement.getAttribute('data-theme') || ThemeManager.THEMES.LIGHT;
                 const newTheme = currentTheme === ThemeManager.THEMES.LIGHT ? ThemeManager.THEMES.DARK : ThemeManager.THEMES.LIGHT;
                 
                 this.applyTheme(newTheme);
                 // Save user preference
                 localStorage.setItem(ThemeManager.STORAGE_KEY, newTheme);
-            });
+            };
+            this.themeToggle.addEventListener('click', clickHandler);
             
             // Keyboard support for theme toggle
-            this.themeToggle.addEventListener('keydown', (e) => {
+            const keydownHandler = (e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     this.themeToggle.click();
                 }
-            });
+            };
+            this.themeToggle.addEventListener('keydown', keydownHandler);
         } catch (error) {
             console.error('ThemeManager initialization error:', error);
         }
