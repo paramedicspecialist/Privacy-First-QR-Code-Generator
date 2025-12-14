@@ -702,8 +702,12 @@ function clearAllSettings() {
   // Update character count
   updateCharCount();
   
-  // Regenerate
-  debouncedGenerate();
+  // Force immediate regeneration instead of debounced
+  if (state.debounceTimer) {
+    clearTimeout(state.debounceTimer);
+    state.debounceTimer = null;
+  }
+  generate();
   
   showStatus('<i class="bi bi-check-circle-fill"></i> Settings cleared', 'success');
 }

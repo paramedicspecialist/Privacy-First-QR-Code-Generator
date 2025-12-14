@@ -242,6 +242,11 @@ body {
   opacity: 0.9;
   margin-bottom: 0;
   font-size: var(--font-sm);
+  justify-content: flex-start !important;
+}
+
+.header h1 {
+  text-align: left !important;
 }
 
 .badge-auto {
