@@ -2,13 +2,20 @@
 // Generates QR code content for different template types
 
 export const Templates = {
-  text: () => document.getElementById('text-content').value || 'https://github.com',
+  text: () => document.getElementById('text-content')?.value || 'https://github.com',
 
   wifi: () => {
-    const ssid = document.getElementById('wifi-ssid').value || 'WiFi';
-    const pass = document.getElementById('wifi-password').value;
-    const enc = document.getElementById('wifi-encryption').value;
-    const hidden = document.getElementById('wifi-hidden').checked;
+    const ssidEl = document.getElementById('wifi-ssid');
+    const passEl = document.getElementById('wifi-password');
+    const encEl = document.getElementById('wifi-encryption');
+    const hiddenEl = document.getElementById('wifi-hidden');
+    
+    if (!ssidEl || !encEl) return 'WIFI:T:WPA;S:WiFi;;';
+    
+    const ssid = ssidEl.value || 'WiFi';
+    const pass = passEl ? passEl.value : '';
+    const enc = encEl.value;
+    const hidden = hiddenEl ? hiddenEl.checked : false;
     
     let s = `WIFI:T:${enc};S:${ssid};`;
     if (pass && enc !== 'nopass') s += `P:${pass};`;
@@ -17,40 +24,67 @@ export const Templates = {
   },
 
   vcard: () => {
-    const name = document.getElementById('vcard-name').value || 'John Doe';
+    const nameEl = document.getElementById('vcard-name');
+    if (!nameEl) return 'BEGIN:VCARD\nVERSION:3.0\nN:;John Doe;;;\nFN:John Doe\nEND:VCARD';
+    
+    const name = nameEl.value || 'John Doe';
     const parts = name.split(' ');
     const last = parts.length > 1 ? parts.pop() : '';
     const first = parts.join(' ') || name;
     
     let v = `BEGIN:VCARD\nVERSION:3.0\nN:${last};${first};;;\nFN:${name}\n`;
-    if (document.getElementById('vcard-org').value) v += `ORG:${document.getElementById('vcard-org').value}\n`;
-    if (document.getElementById('vcard-title').value) v += `TITLE:${document.getElementById('vcard-title').value}\n`;
-    if (document.getElementById('vcard-phone').value) v += `TEL:${document.getElementById('vcard-phone').value}\n`;
-    if (document.getElementById('vcard-email').value) v += `EMAIL:${document.getElementById('vcard-email').value}\n`;
-    if (document.getElementById('vcard-url').value) v += `URL:${document.getElementById('vcard-url').value}\n`;
-    if (document.getElementById('vcard-address').value) v += `ADR:;;${document.getElementById('vcard-address').value};;;;\n`;
+    const orgEl = document.getElementById('vcard-org');
+    const titleEl = document.getElementById('vcard-title');
+    const phoneEl = document.getElementById('vcard-phone');
+    const emailEl = document.getElementById('vcard-email');
+    const urlEl = document.getElementById('vcard-url');
+    const addrEl = document.getElementById('vcard-address');
+    
+    if (orgEl?.value) v += `ORG:${orgEl.value}\n`;
+    if (titleEl?.value) v += `TITLE:${titleEl.value}\n`;
+    if (phoneEl?.value) v += `TEL:${phoneEl.value}\n`;
+    if (emailEl?.value) v += `EMAIL:${emailEl.value}\n`;
+    if (urlEl?.value) v += `URL:${urlEl.value}\n`;
+    if (addrEl?.value) v += `ADR:;;${addrEl.value};;;;\n`;
     return v + 'END:VCARD';
   },
 
   mecard: () => {
     const fields = [];
-    if (document.getElementById('mecard-name').value) fields.push(`N:${document.getElementById('mecard-name').value}`);
-    if (document.getElementById('mecard-phone').value) fields.push(`TEL:${document.getElementById('mecard-phone').value}`);
-    if (document.getElementById('mecard-email').value) fields.push(`EMAIL:${document.getElementById('mecard-email').value}`);
-    if (document.getElementById('mecard-url').value) fields.push(`URL:${document.getElementById('mecard-url').value}`);
-    if (document.getElementById('mecard-address').value) fields.push(`ADR:${document.getElementById('mecard-address').value}`);
-    if (document.getElementById('mecard-birthday').value) fields.push(`BDAY:${document.getElementById('mecard-birthday').value}`);
-    if (document.getElementById('mecard-note').value) fields.push(`NOTE:${document.getElementById('mecard-note').value}`);
+    const nameEl = document.getElementById('mecard-name');
+    const phoneEl = document.getElementById('mecard-phone');
+    const emailEl = document.getElementById('mecard-email');
+    const urlEl = document.getElementById('mecard-url');
+    const addrEl = document.getElementById('mecard-address');
+    const bdayEl = document.getElementById('mecard-birthday');
+    const noteEl = document.getElementById('mecard-note');
+    
+    if (nameEl?.value) fields.push(`N:${nameEl.value}`);
+    if (phoneEl?.value) fields.push(`TEL:${phoneEl.value}`);
+    if (emailEl?.value) fields.push(`EMAIL:${emailEl.value}`);
+    if (urlEl?.value) fields.push(`URL:${urlEl.value}`);
+    if (addrEl?.value) fields.push(`ADR:${addrEl.value}`);
+    if (bdayEl?.value) fields.push(`BDAY:${bdayEl.value}`);
+    if (noteEl?.value) fields.push(`NOTE:${noteEl.value}`);
     return 'MECARD:' + fields.join(';') + ';';
   },
 
   event: () => {
-    const title = document.getElementById('event-title').value || 'Event';
-    const start = document.getElementById('event-start').value;
-    const end = document.getElementById('event-end').value;
-    const location = document.getElementById('event-location').value;
-    const description = document.getElementById('event-description').value;
-    const timezone = document.getElementById('event-timezone').value;
+    const titleEl = document.getElementById('event-title');
+    const startEl = document.getElementById('event-start');
+    const endEl = document.getElementById('event-end');
+    const locEl = document.getElementById('event-location');
+    const descEl = document.getElementById('event-description');
+    const tzEl = document.getElementById('event-timezone');
+    
+    if (!titleEl) return 'BEGIN:VEVENT\nSUMMARY:Event\nEND:VEVENT';
+    
+    const title = titleEl.value || 'Event';
+    const start = startEl ? startEl.value : '';
+    const end = endEl ? endEl.value : '';
+    const location = locEl ? locEl.value : '';
+    const description = descEl ? descEl.value : '';
+    const timezone = tzEl ? tzEl.value : 'UTC';
     
     let v = `BEGIN:VEVENT\nSUMMARY:${title}\n`;
     if (start) v += `DTSTART:${formatDate(new Date(start), timezone)}\n`;
@@ -61,10 +95,17 @@ export const Templates = {
   },
 
   bitcoin: () => {
-    const address = document.getElementById('bitcoin-address').value;
-    const amount = document.getElementById('bitcoin-amount').value;
-    const label = document.getElementById('bitcoin-label').value;
-    const message = document.getElementById('bitcoin-message').value;
+    const addrEl = document.getElementById('bitcoin-address');
+    const amtEl = document.getElementById('bitcoin-amount');
+    const labelEl = document.getElementById('bitcoin-label');
+    const msgEl = document.getElementById('bitcoin-message');
+    
+    if (!addrEl) return 'bitcoin:';
+    
+    const address = addrEl.value;
+    const amount = amtEl ? amtEl.value : '';
+    const label = labelEl ? labelEl.value : '';
+    const message = msgEl ? msgEl.value : '';
     
     let uri = 'bitcoin:';
     if (address) uri += address;
@@ -76,10 +117,17 @@ export const Templates = {
   },
 
   geo: () => {
-    const lat = document.getElementById('geo-latitude').value;
-    const lng = document.getElementById('geo-longitude').value;
-    const alt = document.getElementById('geo-altitude').value;
-    const query = document.getElementById('geo-query').value;
+    const latEl = document.getElementById('geo-latitude');
+    const lngEl = document.getElementById('geo-longitude');
+    const altEl = document.getElementById('geo-altitude');
+    const queryEl = document.getElementById('geo-query');
+    
+    if (!latEl || !lngEl) return 'geo:0,0';
+    
+    const lat = latEl.value;
+    const lng = lngEl.value;
+    const alt = altEl ? altEl.value : '';
+    const query = queryEl ? queryEl.value : '';
     
     if (!lat || !lng) return 'geo:0,0';
     let uri = `geo:${lat},${lng}`;
@@ -89,8 +137,13 @@ export const Templates = {
   },
 
   social: () => {
-    const platform = document.getElementById('social-platform').value;
-    const username = document.getElementById('social-username').value;
+    const platformEl = document.getElementById('social-platform');
+    const usernameEl = document.getElementById('social-username');
+    
+    if (!platformEl || !usernameEl) return 'https://example.com';
+    
+    const platform = platformEl.value;
+    const username = usernameEl.value;
     
     if (platform === 'custom') return username || 'https://example.com';
     
@@ -107,8 +160,13 @@ export const Templates = {
   },
 
   app: () => {
-    const platform = document.getElementById('app-platform').value;
-    const appId = document.getElementById('app-id').value;
+    const platformEl = document.getElementById('app-platform');
+    const appIdEl = document.getElementById('app-id');
+    
+    if (!platformEl || !appIdEl) return 'https://example.com/app';
+    
+    const platform = platformEl.value;
+    const appId = appIdEl.value;
     
     if (platform === 'custom') return appId || 'https://example.com/app';
     
@@ -122,21 +180,35 @@ export const Templates = {
   },
 
   email: () => {
-    const to = document.getElementById('email-to').value || 'test@example.com';
+    const toEl = document.getElementById('email-to');
+    const subjectEl = document.getElementById('email-subject');
+    const bodyEl = document.getElementById('email-body');
+    
+    if (!toEl) return 'mailto:test@example.com';
+    
+    const to = toEl.value || 'test@example.com';
     let m = `mailto:${to}`;
     const p = [];
-    if (document.getElementById('email-subject').value) p.push(`subject=${encodeURIComponent(document.getElementById('email-subject').value)}`);
-    if (document.getElementById('email-body').value) p.push(`body=${encodeURIComponent(document.getElementById('email-body').value)}`);
+    if (subjectEl?.value) p.push(`subject=${encodeURIComponent(subjectEl.value)}`);
+    if (bodyEl?.value) p.push(`body=${encodeURIComponent(bodyEl.value)}`);
     return p.length ? m + '?' + p.join('&') : m;
   },
 
   sms: () => {
-    const phone = document.getElementById('sms-phone').value || '+1234567890';
-    const message = document.getElementById('sms-message').value;
+    const phoneEl = document.getElementById('sms-phone');
+    const messageEl = document.getElementById('sms-message');
+    
+    if (!phoneEl) return 'sms:+1234567890';
+    
+    const phone = phoneEl.value || '+1234567890';
+    const message = messageEl ? messageEl.value : '';
     return message ? `sms:${phone}?body=${encodeURIComponent(message)}` : `sms:${phone}`;
   },
 
-  phone: () => `tel:${document.getElementById('phone-number').value || '+1234567890'}`
+  phone: () => {
+    const phoneEl = document.getElementById('phone-number');
+    return `tel:${phoneEl?.value || '+1234567890'}`;
+  }
 };
 
 function formatDate(date, timezone) {

@@ -249,8 +249,39 @@ body {
   padding: 0.2rem 0.6rem;
   border-radius: 4px;
   font-size: 0.7rem;
-  margin-left: 0.5rem;
   font-weight: 500;
+}
+
+/* Header controls breakpoint - switch to mobile layout earlier */
+@media (max-width: 950px) {
+  .header {
+    padding: 1.25rem 1rem;
+    text-align: center;
+  }
+  
+  .header h1 {
+    font-size: var(--font-2xl);
+    margin-bottom: 0.75rem;
+  }
+  
+  .header p {
+    font-size: var(--font-xs);
+    margin-bottom: 1rem;
+  }
+  
+  .header-controls {
+    margin-top: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .header-controls .btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+  }
+  
+  .header-controls .btn i {
+    font-size: 1rem;
+  }
 }
 
 .theme-toggle-wrapper {
@@ -862,17 +893,37 @@ input[type="file"].form-control::file-selector-button:hover {
   }
   
   .header {
-    padding: 1rem;
+    padding: 1.25rem 1rem;
     text-align: center;
+    position: relative;
   }
   
   .header h1 {
     font-size: var(--font-2xl);
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.75rem;
   }
   
   .header p {
     font-size: var(--font-xs);
+    margin-bottom: 1rem;
+  }
+  
+  .header-controls {
+    position: static !important;
+    transform: none !important;
+    margin-top: 1.25rem;
+    margin-bottom: 1.5rem;
+    justify-content: center !important;
+    gap: 1rem !important;
+  }
+  
+  .header-controls .btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+  }
+  
+  .header-controls .btn i {
+    font-size: 1rem;
   }
   
   .qr-preview {
@@ -922,13 +973,19 @@ input[type="file"].form-control::file-selector-button:hover {
   }
   
   .d-flex.gap-2.align-items-center {
-    flex-direction: column;
-    align-items: stretch !important;
+    flex-direction: row !important;
+    align-items: center !important;
     gap: 0.5rem !important;
+    flex-wrap: nowrap !important;
   }
   
   .d-flex.gap-2.align-items-center .color-preview {
-    align-self: center;
+    flex-shrink: 0;
+  }
+  
+  .d-flex.gap-2.align-items-center .form-control {
+    flex: 1;
+    min-width: 0;
   }
   
   .row.g-2 {
@@ -948,11 +1005,31 @@ input[type="file"].form-control::file-selector-button:hover {
   }
   
   .header {
-    padding: 0.75rem;
+    padding: 1rem 0.75rem;
   }
   
   .header h1 {
     font-size: var(--font-xl);
+    margin-bottom: 0.5rem;
+  }
+  
+  .header p {
+    margin-bottom: 0.75rem;
+  }
+  
+  .header-controls {
+    flex-direction: column;
+    gap: 0.75rem !important;
+    margin-top: 1rem;
+    margin-bottom: 1.25rem;
+    justify-content: center !important;
+    align-items: center !important;
+  }
+  
+  .header-controls .btn {
+    width: 100%;
+    padding: 0.625rem;
+    font-size: 0.875rem;
   }
   
   .control-section {

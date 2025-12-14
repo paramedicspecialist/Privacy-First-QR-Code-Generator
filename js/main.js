@@ -366,6 +366,8 @@ function download(format) {
   if (format === 'svg') {
     link.href = URL.createObjectURL(new Blob([generateSVG()], {type: 'image/svg+xml'}));
     link.download = `qrcode-${date}.svg`;
+    link.click();
+    URL.revokeObjectURL(link.href);
   } else if (format === 'jpg') {
     const tmp = document.createElement('canvas');
     tmp.width = state.canvas.width;
@@ -376,13 +378,12 @@ function download(format) {
     ctx.drawImage(state.canvas, 0, 0);
     link.href = tmp.toDataURL('image/jpeg', 0.95);
     link.download = `qrcode-${date}.jpg`;
+    link.click();
   } else {
     link.href = state.canvas.toDataURL('image/png');
     link.download = `qrcode-${date}.png`;
+    link.click();
   }
-  
-  link.click();
-  if (format === 'svg') URL.revokeObjectURL(link.href);
   
   showStatus(`<i class="bi bi-check"></i> Downloaded ${format.toUpperCase()}`, 'success');
   setTimeout(hideStatus, 1500);
@@ -396,6 +397,7 @@ function generateSVG() {
   const ec = $('error-correction').value;
   const margin = +$('margin-size').value;
   const style = $('dot-style').value;
+  const logoPercent = parseInt($('logo-size')?.value || '20', 10);
   
   const qr = qrcode(0, ec);
   qr.addData(content);
@@ -422,7 +424,27 @@ function generateSVG() {
     }
   }
   
-  const svg = `<?xml version="1.0"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}"><rect width="100%" height="100%" fill="${bg}"/>${paths}</svg>`;
+  // Add logo if present
+  let logoSvg = '';
+  if (state.logo) {
+    const maxSize = size * (logoPercent / 100);
+    const ratio = state.logo.naturalWidth / state.logo.naturalHeight;
+    const [w, h] = ratio >= 1
+      ? [maxSize, maxSize / ratio]
+      : [maxSize * ratio, maxSize];
+    
+    const lx = (size - w) / 2;
+    const ly = (size - h) / 2;
+    const pad = Math.max(w, h) * 0.1;
+    
+    // Logo background
+    logoSvg += `<rect x="${lx - pad}" y="${ly - pad}" width="${w + pad*2}" height="${h + pad*2}" fill="${bg}" rx="${pad * 0.5}"/>`;
+    
+    // Logo image
+    logoSvg += `<image href="${state.logo.src}" x="${lx}" y="${ly}" width="${w}" height="${h}"/>`;
+  }
+  
+  const svg = `<?xml version="1.0"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}"><rect width="100%" height="100%" fill="${bg}"/>${paths}${logoSvg}</svg>`;
   return DOMPurify.sanitize(svg, { USE_PROFILES: { svg: true, svgFilters: true } });
 }
 
