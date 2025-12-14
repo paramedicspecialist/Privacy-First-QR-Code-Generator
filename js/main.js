@@ -1,5 +1,5 @@
 // QR Code Generator - Main Module
-// Privacy-first, client-side QR generation
+// Privacy-focused, client-side QR generation
 
 import { getContent } from './modules/templates.js';
 

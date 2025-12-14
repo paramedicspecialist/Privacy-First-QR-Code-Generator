@@ -1,4 +1,4 @@
-# Privacy-First QR Code Generator
+# Privacy-Focused QR Code Generator
 
 A secure, open-source QR code generator that runs entirely in your browser. No data collection, no tracking, no server-side processing.
 
@@ -24,7 +24,7 @@ python -m http.server 8000
 1. Fork this repository
 2. Go to Settings > Pages
 3. Select main branch and save
-4. Access at `https://yourusername.github.io/Privacy-First-QR-Code-Generator/`
+4. Access at `https://yourusername.github.io/Privacy-Focused-QR-Code-Generator/`
 
 ## Usage
 
@@ -60,7 +60,7 @@ All QR codes are generated entirely in your browser using JavaScript. No data is
 
 **File Structure:**
 ```
-Privacy-First QR Code Generator/
+Privacy-Focused QR Code Generator/
 ├── index.html              # Main application
 ├── privacy-policy.html     # Privacy policy
 ├── css/
